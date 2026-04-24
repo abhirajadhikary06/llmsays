@@ -28,11 +28,12 @@ affiliations:
 date: 2026-04-24
 bibliography: paper.bib
 doi: 10.5281/zenodo.19365666
+figshare_doi: 10.6084/m9.figshare.31916274
 ---
 
 # Summary
 
-`llmsays` is an open-source Python library (MIT License) available at <https://github.com/abhirajadhikary06/llmsays> that reduces large language model (LLM) inference to a single function call. It introduces a two-stage hybrid routing mechanism that classifies an input prompt into one of four complexity tiers — `small`, `medium`, `large`, and `extra_large` — using a lightweight sentence-transformer model [@reimers2019], and subsequently dispatches the query to the most appropriate provider-specific model. The library supports five commercial inference providers (Groq [@groq2024], NVIDIA NIM [@nvidia2024], OpenRouter, Fireworks AI, and Baseten) with automatic latency-aware failover, eliminating manual provider management for researchers and practitioners alike. An optional multiprocessing mode enables parallel provider queries, returning the first successful response for latency-critical applications.
+`llmsays` is an open-source Python library (MIT License) available at <https://github.com/abhirajadhikary06/llmsays> that reduces large language model (LLM) inference to a single function call. It introduces a two-stage hybrid routing mechanism that classifies an input prompt into one of four complexity tiers — `small`, `medium`, `large`, and `extra_large` — using a lightweight sentence-transformer model [@reimers2019], and subsequently dispatches the query to the most appropriate provider-specific model. The library supports five commercial inference providers (Groq [@groq2024], NVIDIA NIM [@nvidia2024], OpenRouter [@openrouter], Fireworks AI [@fireworks], and Baseten [@baseten]) with automatic latency-aware failover, eliminating manual provider management for researchers and practitioners alike. An optional multiprocessing mode enables parallel provider queries, returning the first successful response for latency-critical applications.
 
 # Statement of Need
 
@@ -68,7 +69,7 @@ The routing pipeline consists of two sequential stages designed for speed and ac
 
 **Stage 1 — Heuristic Pre-filter.** A lightweight rule-based filter examines surface-level features of the prompt (token count, presence of domain-specific keywords, structural complexity indicators such as multi-part questions or code snippets) to produce a coarse initial tier estimate at near-zero latency.
 
-**Stage 2 — Semantic Refinement.** The prompt is encoded using `sentence-transformers/paraphrase-MiniLM-L3-v2` [@reimers2019], a 17M-parameter bi-encoder optimised for fast CPU inference. The resulting embedding is compared against centroid representations of each tier's exemplar prompts via cosine similarity. If the semantic signal conflicts with the heuristic estimate, the semantic score takes precedence.
+**Stage 2 — Semantic Refinement.** The prompt is encoded using `sentence-transformers/paraphrase-MiniLM-L3-v2` [@reimers2019; @sentencetransformers_pkg], a 17M-parameter bi-encoder optimised for fast CPU inference. The resulting embedding is compared against centroid representations of each tier's exemplar prompts via cosine similarity. If the semantic signal conflicts with the heuristic estimate, the semantic score takes precedence.
 
 The result is one of four tiers:
 
@@ -132,7 +133,7 @@ The internal control flow of a single `llmsays()` invocation is as follows:
 5. **Dispatch loop** — Providers are attempted sequentially (or in parallel); first success returned.
 6. **Latency update** — EWMA table updated for the successful provider.
 
-The library has a minimal dependency footprint: `sentence-transformers` for the embedding model, `httpx` for async-compatible HTTP, and standard-library modules for multiprocessing and environment variable handling.
+The library depends on `sentence-transformers` [@sentencetransformers_pkg] for the embedding model, `semantic-router` for hybrid routing support, and the official provider SDKs (`openai`, `groq`, `openrouter`, `fireworks-ai`, `baseten`) for inference dispatch. Standard-library modules handle multiprocessing and environment variable management.
 
 # Installation
 
