@@ -57,8 +57,6 @@ The contemporary LLM ecosystem presents several interoperability challenges that
 
 **Reliability.** Commercial APIs are subject to rate limits, transient outages, and quota exhaustion. Robust applications must implement retry and failover logic, which is non-trivial to do correctly and is typically re-implemented from scratch in each project.
 
-**Latency Variability.** Provider response times fluctuate unpredictably. Applications requiring low latency benefit from parallelising requests across providers and accepting the first successful response — a pattern that no mainstream library currently automates.
-
 Existing abstraction layers such as LiteLLM [@litellm] provide broad model coverage but require the caller to explicitly name the model on every invocation. `llmsays` goes one step further by automating model selection through prompt-complexity routing, enabling fully hands-free LLM inference for standard use-cases. No existing library combines automatic prompt-tier routing, latency-aware failover ordering, and optional parallel querying in a single zero-configuration interface.
 
 # State of the Field
@@ -180,15 +178,9 @@ The package has been archived on Zenodo (DOI: [10.5281/zenodo.19365666](https://
 Near-term impact is anticipated in research settings where multi-provider redundancy is operationally important — for example, large-scale prompt evaluation studies where a single provider outage would otherwise halt data collection. The parallel query mode directly addresses this failure mode.
 
 # AI Usage Disclosure
-
-<!-- AUTHOR ACTION REQUIRED: Replace the appropriate option below and delete the other. -->
-
-**Option A — If no AI tools were used:**
-No generative AI tools were used in the development of the `llmsays` software, its documentation, or the authoring of this paper.
-
-**Option B — If AI tools were used:**
-Generative AI tools (specify: e.g., GitHub Copilot, ChatGPT) were used in the following capacities during this work: (describe, e.g., code autocompletion, drafting docstrings, grammar checking). All AI-generated content was reviewed, edited, and verified for correctness by the authors before inclusion. The authors take full responsibility for the accuracy of all content in this paper and the associated software.
-
+ 
+Claude (Anthropic) was used as a writing assistance tool during the authoring of this paper. Its use was limited to drafting, paraphrasing, and improving the clarity of written prose. All AI-assisted content was reviewed, edited, and verified for accuracy and correctness by the authors. The software itself, its architecture, and its implementation were developed independently by the authors without the use of AI code generation tools. The authors take full responsibility for the accuracy of all content in this paper and the associated software.
+ 
 # Acknowledgements
 
 The authors thank Haldia Institute of Technology for institutional support and the open-source community whose tooling — in particular the Hugging Face ecosystem and the `sentence-transformers` library — made this work possible.
