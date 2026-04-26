@@ -61,7 +61,29 @@ The contemporary LLM ecosystem presents several interoperability challenges that
 
 Existing abstraction layers such as LiteLLM [@litellm] provide broad model coverage but require the caller to explicitly name the model on every invocation. `llmsays` goes one step further by automating model selection through prompt-complexity routing, enabling fully hands-free LLM inference for standard use-cases. No existing library combines automatic prompt-tier routing, latency-aware failover ordering, and optional parallel querying in a single zero-configuration interface.
 
-# Design and Implementation
+# State of the Field
+
+Several Python libraries provide abstractions over LLM inference APIs, but none combine prompt-complexity routing with multi-provider failover in a zero-configuration interface.
+
+**LiteLLM** [@litellm] is the most widely adopted abstraction layer. It unifies the calling convention across over 100 providers using an OpenAI-compatible interface, handles retries, and supports cost tracking. However, it requires the caller to explicitly specify a model name on every invocation — model selection remains a manual responsibility. `llmsays` automates this step entirely.
+
+**LangChain** is a compositional framework for building LLM-powered pipelines [@langchain]. Its `LLMChain` and `ChatModel` abstractions support multiple providers but are designed for complex agentic workflows rather than single-call inference. For users who only need to query a model, LangChain introduces significant boilerplate.
+
+Neither library implements latency-aware provider ordering derived from runtime EWMA measurements, nor do they offer a parallel multi-provider query mode that races providers and returns the first successful response. `llmsays` is designed specifically for the common case — a single prompt, a single response — and makes that case require zero configuration beyond an API key.
+
+The design philosophy of `llmsays` is therefore complementary rather than competitive: it occupies the lowest-friction point of the inference stack, and users who outgrow its abstractions can migrate to LiteLLM or LangChain without changing their application logic.
+
+# Software Design
+
+## Design Trade-offs
+
+Three principal trade-offs shaped the architecture of `llmsays`:
+
+**Accuracy vs. latency in routing.** A single large classification model would yield higher tier-assignment accuracy but would dominate the total inference latency for short prompts. The two-stage design — a near-zero-cost heuristic pre-filter followed by a 17M-parameter semantic model — was chosen to keep routing overhead below 50 ms on commodity CPU hardware in the common case, while preserving semantic accuracy for ambiguous prompts where surface-level heuristics fail.
+
+**Breadth vs. depth of provider coverage.** Rather than wrapping every available provider, `llmsays` supports five providers selected for complementary model coverage across the tier matrix: Groq for low-latency small models, NVIDIA NIM for enterprise-grade large models, and OpenRouter, Fireworks AI, and Baseten for diverse mid-range and frontier options. This constrained set allows the maintainers to validate the model matrix against each provider's actual API behaviour rather than relying on untested community contributions.
+
+**Simplicity vs. configurability.** The primary interface exposes a single function with sensible defaults. Advanced options (`provider_preference`, `use_multiprocessing`) are available but not required. This reflects a deliberate choice to optimise for the 80% use-case — a researcher or developer who wants a response without reading documentation — while not preventing power users from customising behaviour.
 
 ## Prompt-Tier Routing
 
@@ -137,7 +159,7 @@ The library depends on `sentence-transformers` [@sentencetransformers_pkg] for t
 
 # Installation
 
-`llmsays` requires Python ≥ 3.9 and is distributed via PyPI:
+`llmsays` (current version: `0.1.3`) requires Python ≥ 3.9 and is distributed via PyPI:
 
 ```bash
 pip install llmsays
@@ -148,6 +170,24 @@ The `sentence-transformers` model weights are downloaded automatically on first 
 # Testing
 
 The test suite is executed with `pytest` from the repository root. Tests cover the routing logic (unit tests with mocked embeddings), the failover mechanism (simulated provider errors), and CLI argument parsing. Contributions are expected to maintain or improve coverage.
+
+# Research Impact Statement
+
+`llmsays` was developed to lower the barrier to reproducible LLM-based research. By eliminating the provider selection and authentication boilerplate that typically precedes any LLM experiment, it enables researchers to focus on experimental design rather than infrastructure. The library is publicly available on PyPI and GitHub under the MIT License, making it freely usable in both academic and commercial contexts.
+
+The package has been archived on Zenodo (DOI: [10.5281/zenodo.19365666](https://doi.org/10.5281/zenodo.19365666)) and Figshare (DOI: [10.6084/m9.figshare.31916274](https://doi.org/10.6084/m9.figshare.31916274)) to ensure long-term citability and reproducibility. The versioned model matrix and open contribution model allow the community to extend provider and model coverage as the LLM ecosystem evolves.
+
+Near-term impact is anticipated in research settings where multi-provider redundancy is operationally important — for example, large-scale prompt evaluation studies where a single provider outage would otherwise halt data collection. The parallel query mode directly addresses this failure mode.
+
+# AI Usage Disclosure
+
+<!-- AUTHOR ACTION REQUIRED: Replace the appropriate option below and delete the other. -->
+
+**Option A — If no AI tools were used:**
+No generative AI tools were used in the development of the `llmsays` software, its documentation, or the authoring of this paper.
+
+**Option B — If AI tools were used:**
+Generative AI tools (specify: e.g., GitHub Copilot, ChatGPT) were used in the following capacities during this work: (describe, e.g., code autocompletion, drafting docstrings, grammar checking). All AI-generated content was reviewed, edited, and verified for correctness by the authors before inclusion. The authors take full responsibility for the accuracy of all content in this paper and the associated software.
 
 # Acknowledgements
 
